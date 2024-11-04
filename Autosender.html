@@ -10,17 +10,19 @@
             text-align: center;
             margin: 20px;
         }
-        #contactList a, #doneList a {
-            display: block;
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin: 5px 0;
-            color: blue;
-            text-decoration: underline;
         }
         #doneSection {
             display: none;
         }
         button {
-            margin: 10px;
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -101,23 +103,33 @@
             doneList.innerHTML = '';
 
             numbers.forEach(number => {
-                const link = document.createElement('a');
-                link.href = `sms:${number}?&body=${encodeURIComponent(message)}`;
-                link.textContent = `Send message to ${number}`;
-                link.onclick = (event) => {
-                    event.preventDefault(); // Prevent SMS app from opening immediately
-                    markAsDone(number, link);
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = "button-container";
+
+                // Send SMS button
+                const sendButton = document.createElement('button');
+                sendButton.textContent = `Send message to ${number}`;
+                sendButton.onclick = () => {
+                    window.location.href = `sms:${number}?&body=${encodeURIComponent(message)}`;
                 };
 
+                // Mark as Done button
+                const markDoneButton = document.createElement('button');
+                markDoneButton.textContent = "Mark as Done";
+                markDoneButton.onclick = () => markAsDone(number);
+
+                buttonContainer.appendChild(sendButton);
+                buttonContainer.appendChild(markDoneButton);
+
                 if (doneNumbers.includes(number)) {
-                    doneList.appendChild(link);
+                    doneList.appendChild(buttonContainer);
                 } else {
-                    contactList.appendChild(link);
+                    contactList.appendChild(buttonContainer);
                 }
             });
         }
 
-        function markAsDone(number, linkElement) {
+        function markAsDone(number) {
             if (!doneNumbers.includes(number)) {
                 doneNumbers.push(number);
                 localStorage.setItem('doneNumbers', JSON.stringify(doneNumbers));
