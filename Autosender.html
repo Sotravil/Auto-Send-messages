@@ -16,7 +16,7 @@
             gap: 10px;
             margin: 5px 0;
         }
-        #doneSection {
+        #contactList, #doneList, #toggleDoneButton {
             display: none;
         }
         button {
@@ -29,16 +29,12 @@
 <body>
     <h1>Quick SMS Sender</h1>
     
-    <button onclick="generateLinks()">Generate Links</button>
-    <button onclick="toggleDoneList()">Show/Hide Done List</button>
+    <button onclick="showMainList()" id="mainButton">Show Contacts</button>
+    <button onclick="showDoneList()" id="toggleDoneButton">Show Done List</button>
     <button onclick="clearDoneList()">Clear Done List</button>
     
     <div id="contactList"></div>
-    
-    <div id="doneSection">
-        <h2>Done</h2>
-        <div id="doneList"></div>
-    </div>
+    <div id="doneList"></div>
 
     <script>
         const numbers = [
@@ -93,63 +89,98 @@
 
         const message = "Hola! Mi nombre es Sidney, soy un oficial del ejército. Me gustaría hablarle sobre las oportunidades que tenemos para su hijo. Pagamos la universidad y las escuelas vocacionales.\nSi hay interés, envíeme un mensaje de texto para una cita y obtener más información.\nMi oficina está ubicada en 8240 Mills Drive, Miami, FL 33183";
 
-        // Load done numbers from localStorage or initialize as empty array
-        const doneNumbers = JSON.parse(localStorage.getItem('doneNumbers')) || [];
+        let doneNumbers = [];
+
+        function loadData() {
+            // Load done numbers from localStorage or initialize as empty array
+            doneNumbers = JSON.parse(localStorage.getItem('doneNumbers')) || [];
+        }
+
+        function saveData() {
+            // Save done numbers to localStorage
+            localStorage.setItem('doneNumbers', JSON.stringify(doneNumbers));
+        }
 
         function generateLinks() {
             const contactList = document.getElementById('contactList');
-            const doneList = document.getElementById('doneList');
             contactList.innerHTML = '';
-            doneList.innerHTML = '';
 
             numbers.forEach(number => {
+                if (!doneNumbers.includes(number)) {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = "button-container";
+
+                    // Send SMS button
+                    const sendButton = document.createElement('button');
+                    sendButton.textContent = `Send message to ${number}`;
+                    sendButton.onclick = () => {
+                        window.location.href = `sms:${number}?&body=${encodeURIComponent(message)}`;
+                    };
+
+                    // Mark as Done button
+                    const markDoneButton = document.createElement('button');
+                    markDoneButton.textContent = "Mark as Done";
+                    markDoneButton.onclick = () => markAsDone(number);
+
+                    buttonContainer.appendChild(sendButton);
+                    buttonContainer.appendChild(markDoneButton);
+                    contactList.appendChild(buttonContainer);
+                }
+            });
+        }
+
+        function generateDoneLinks() {
+            const doneList = document.getElementById('doneList');
+            doneList.innerHTML = '';
+
+            doneNumbers.forEach(number => {
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = "button-container";
 
-                // Send SMS button
                 const sendButton = document.createElement('button');
                 sendButton.textContent = `Send message to ${number}`;
                 sendButton.onclick = () => {
                     window.location.href = `sms:${number}?&body=${encodeURIComponent(message)}`;
                 };
 
-                // Mark as Done button
-                const markDoneButton = document.createElement('button');
-                markDoneButton.textContent = "Mark as Done";
-                markDoneButton.onclick = () => markAsDone(number);
-
                 buttonContainer.appendChild(sendButton);
-                buttonContainer.appendChild(markDoneButton);
-
-                if (doneNumbers.includes(number)) {
-                    doneList.appendChild(buttonContainer);
-                } else {
-                    contactList.appendChild(buttonContainer);
-                }
+                doneList.appendChild(buttonContainer);
             });
         }
 
         function markAsDone(number) {
             if (!doneNumbers.includes(number)) {
                 doneNumbers.push(number);
-                localStorage.setItem('doneNumbers', JSON.stringify(doneNumbers));
-                generateLinks(); // Refresh the lists to move the link to "Done"
+                saveData();
+                generateLinks();
             }
         }
 
-        function toggleDoneList() {
-            const doneSection = document.getElementById('doneSection');
-            doneSection.style.display = doneSection.style.display === 'none' ? 'block' : 'none';
+        function showMainList() {
+            document.getElementById('contactList').style.display = 'block';
+            document.getElementById('doneList').style.display = 'none';
+            document.getElementById('mainButton').style.display = 'none';
+            document.getElementById('toggleDoneButton').style.display = 'inline';
+            generateLinks();
+        }
+
+        function showDoneList() {
+            document.getElementById('contactList').style.display = 'none';
+            document.getElementById('doneList').style.display = 'block';
+            document.getElementById('mainButton').style.display = 'inline';
+            document.getElementById('toggleDoneButton').style.display = 'none';
+            generateDoneLinks();
         }
 
         function clearDoneList() {
             localStorage.removeItem('doneNumbers');
-            doneNumbers.length = 0; // Clear the array
-            generateLinks(); // Refresh the lists
+            doneNumbers = [];
+            showMainList(); // Go back to the main list after clearing
         }
 
-        // Initialize the page with the saved data
-        generateLinks();
+        // Load data on page load and initialize main list view
+        loadData();
+        showMainList();
     </script>
 </body>
 </html>
